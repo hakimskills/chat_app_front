@@ -1,11 +1,15 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+
 import '../core/api_client.dart';
 import '../core/api_exception.dart';
 import '../core/constants.dart';
 import '../core/token_storage.dart';
 import '../models/user_model.dart';
 
-/// Result of any auth call — user + the token that was just issued.
 class AuthResult {
   final UserModel user;
   final String accessToken;
@@ -13,7 +17,7 @@ class AuthResult {
 }
 
 class AuthService {
-  final Dio _dio = ApiClient.instance.dio;
+  final ApiClient _client = ApiClient.instance;
 
   Future<AuthResult> register({
     required String name,
@@ -22,18 +26,14 @@ class AuthService {
     required String passwordConfirmation,
     String deviceName = 'Flutter App',
   }) async {
-    try {
-      final response = await _dio.post(ApiConstants.register, data: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-        'device_name': deviceName,
-      });
-      return _handleAuthResponse(response.data);
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
-    }
+    final response = await _safePost(ApiConstants.register, {
+      'name': name,
+      'email': email,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+      'device_name': deviceName,
+    });
+    return _handleAuthResponse(response);
   }
 
   Future<AuthResult> login({
@@ -41,58 +41,81 @@ class AuthService {
     required String password,
     String deviceName = 'Flutter App',
   }) async {
-    try {
-      final response = await _dio.post(ApiConstants.login, data: {
-        'email': email,
-        'password': password,
-        'device_name': deviceName,
-      });
-      return _handleAuthResponse(response.data);
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
-    }
+    final response = await _safePost(ApiConstants.login, {
+      'email': email,
+      'password': password,
+      'device_name': deviceName,
+    });
+    return _handleAuthResponse(response);
   }
 
   Future<AuthResult> loginWithGoogle({
     required String idToken,
     String deviceName = 'Flutter App',
   }) async {
-    try {
-      final response = await _dio.post(ApiConstants.google, data: {
-        'id_token': idToken,
-        'device_name': deviceName,
-      });
-      return _handleAuthResponse(response.data);
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
-    }
+    final response = await _safePost(ApiConstants.google, {
+      'id_token': idToken,
+      'device_name': deviceName,
+    });
+    return _handleAuthResponse(response);
   }
 
   Future<UserModel> getCurrentUser() async {
-    try {
-      final response = await _dio.get(ApiConstants.me);
-      return UserModel.fromJson(response.data['user']);
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
+    final response = await _safeGet(ApiConstants.me);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserModel.fromJson(data['user']);
     }
+    throw ApiException.fromResponse(response);
   }
 
   Future<void> logout() async {
     try {
-      await _dio.post(ApiConstants.logout);
-    } on DioException catch (e) {
-      // Even if the server call fails (e.g. token already invalid),
-      // we still want to clear local state — see AuthProvider.logout().
-      throw ApiException.fromDioError(e);
+      final response = await _safePost(ApiConstants.logout, {});
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException.fromResponse(response);
+      }
     } finally {
+      // Always clear the local token, even if the server call failed —
+      // e.g. token was already invalid/revoked elsewhere.
       await TokenStorage.instance.deleteToken();
     }
   }
 
-  Future<AuthResult> _handleAuthResponse(Map<String, dynamic> data) async {
-    final user = UserModel.fromJson(data['user']);
-    final token = data['access_token'] as String;
-    await TokenStorage.instance.saveToken(token);
-    return AuthResult(user: user, accessToken: token);
+  Future<AuthResult> _handleAuthResponse(http.Response response) async {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final user = UserModel.fromJson(data['user']);
+      final token = data['access_token'] as String;
+      await TokenStorage.instance.saveToken(token);
+      return AuthResult(user: user, accessToken: token);
+    }
+    throw ApiException.fromResponse(response);
+  }
+
+  Future<http.Response> _safePost(
+      String path, Map<String, dynamic> body) async {
+    try {
+      return await _client.post(path, body);
+    } on SocketException {
+      throw ApiException.network();
+    } on TimeoutException {
+      throw ApiException.network();
+    } on http.ClientException {
+      throw ApiException.network();
+    }
+  }
+
+  Future<http.Response> _safeGet(String path) async {
+    try {
+      return await _client.get(path);
+    } on SocketException {
+      throw ApiException.network();
+    } on TimeoutException {
+      throw ApiException.network();
+    } on http.ClientException {
+      throw ApiException.network();
+    }
   }
 }
