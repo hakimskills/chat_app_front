@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
@@ -24,6 +25,7 @@ class ApiClient {
   }
 
   Future<http.Response> post(String path, Map<String, dynamic> body) async {
+    debugPrint('➡️ POST ${ApiConstants.baseUrl}$path');
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     return http
         .post(uri, headers: await _headers(), body: jsonEncode(body))

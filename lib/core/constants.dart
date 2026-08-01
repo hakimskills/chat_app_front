@@ -8,7 +8,7 @@ class ApiConstants {
   //     e.g. http://192.168.1.42:8000/api — find it with `ipconfig` on
   //     Windows, and make sure `php artisan serve --host=0.0.0.0` is used
   //     so Laravel accepts connections from other devices on the network.
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  static const String baseUrl = 'http://192.168.100.101:8000/api';
 
   static const String register = '/auth/register';
   static const String login = '/auth/login';

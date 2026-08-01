@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 import '../core/api_exception.dart';
 import '../core/constants.dart';
 import '../core/token_storage.dart';
@@ -57,7 +58,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> login({required String email, required String password}) {
-    return _runAuthAction(() => _authService.login(email: email, password: password));
+    return _runAuthAction(
+        () => _authService.login(email: email, password: password));
   }
 
   Future<bool> loginWithGoogle() async {
@@ -88,7 +90,10 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      errorMessage = e is ApiException ? e.message : 'Google sign-in failed.';
+      debugPrint('🔴 Google sign-in error: $e');
+      errorMessage =
+          e is ApiException ? e.message : 'Google sign-in failed: $e';
+
       isLoading = false;
       notifyListeners();
       return false;
