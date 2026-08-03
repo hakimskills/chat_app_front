@@ -240,6 +240,8 @@ class _IconAction extends StatelessWidget {
   }
 }
 
+/// Sun/moon icon button that flips between light and dark mode, and
+/// persists the choice (see ThemeProvider).
 class _ThemeToggleButton extends StatelessWidget {
   const _ThemeToggleButton();
 
