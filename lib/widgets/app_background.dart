@@ -4,8 +4,8 @@ import '../theme/app_theme.dart';
 
 /// Wraps a screen body with the app's signature backdrop: a soft
 /// top-to-bottom gradient with two large, blurred color orbs sitting
-/// behind the content. Used on every auth screen so the brand feels
-/// consistent without repeating layout code.
+/// behind the content. Colors come from the active theme (light/dark),
+/// so this automatically adapts — nothing to configure per screen.
 class AppBackground extends StatelessWidget {
   final Widget child;
 
@@ -13,19 +13,21 @@ class AppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
-      decoration: const BoxDecoration(gradient: AppGradients.background),
+      decoration: BoxDecoration(gradient: colors.backgroundGradient),
       child: Stack(
         children: [
           Positioned(
             top: -80,
             right: -60,
-            child: _Orb(color: AppColors.orbA.withOpacity(0.55), size: 220),
+            child: _Orb(color: colors.orbA.withOpacity(0.5), size: 220),
           ),
           Positioned(
             bottom: -100,
             left: -70,
-            child: _Orb(color: AppColors.orbB.withOpacity(0.5), size: 260),
+            child: _Orb(color: colors.orbB.withOpacity(0.45), size: 260),
           ),
           child,
         ],
@@ -62,6 +64,8 @@ class BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return SizedBox(
       width: size,
       height: size,
@@ -72,11 +76,11 @@ class BrandMark extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              gradient: AppGradients.primary,
+              gradient: colors.primaryGradient,
               borderRadius: BorderRadius.circular(size * 0.32),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryEnd.withOpacity(0.35),
+                  color: colors.primaryEnd.withOpacity(0.35),
                   blurRadius: 24,
                   offset: const Offset(0, 10),
                 ),
@@ -91,9 +95,9 @@ class BrandMark extends StatelessWidget {
               width: size * 0.26,
               height: size * 0.26,
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                color: colors.accent,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.bgTop, width: 3),
+                border: Border.all(color: colors.bgTop, width: 3),
               ),
             ),
           ),

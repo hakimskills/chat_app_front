@@ -15,6 +15,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final disabled = onPressed == null || isLoading;
 
     return Opacity(
@@ -22,13 +23,13 @@ class PrimaryButton extends StatelessWidget {
       child: Container(
         height: 54,
         decoration: BoxDecoration(
-          gradient: AppGradients.primary,
+          gradient: colors.primaryGradient,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isLoading
               ? []
               : [
                   BoxShadow(
-                    color: AppColors.primaryEnd.withOpacity(0.28),
+                    color: colors.primaryEnd.withOpacity(0.28),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
