@@ -1,11 +1,9 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 
-/// Wraps a screen body with the app's signature backdrop: a soft
-/// top-to-bottom gradient with two large, blurred color orbs sitting
-/// behind the content. Colors come from the active theme (light/dark),
-/// so this automatically adapts — nothing to configure per screen.
 class AppBackground extends StatelessWidget {
   final Widget child;
 
@@ -55,8 +53,6 @@ class _Orb extends StatelessWidget {
   }
 }
 
-/// The brand mark: a gradient speech-bubble with a small spark dot.
-/// Used on the splash screen and the top of the login/register forms.
 class BrandMark extends StatelessWidget {
   final double size;
 
@@ -86,7 +82,8 @@ class BrandMark extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(Icons.chat_bubble_rounded, color: Colors.white, size: size * 0.5),
+            child: Icon(Icons.chat_bubble_rounded,
+                color: Colors.white, size: size * 0.5),
           ),
           Positioned(
             top: -size * 0.06,

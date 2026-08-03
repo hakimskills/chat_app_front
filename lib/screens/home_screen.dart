@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 
@@ -22,9 +24,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.bgBottom,
+      backgroundColor: colors.bgBottom,
       body: user == null
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -41,16 +44,26 @@ class HomeScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'Hey, ${user.name.split(' ').first} 👋',
-                                style: Theme.of(context).textTheme.headlineSmall,
+                                style:
+                                    Theme.of(context).textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '@${user.username}',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                style: TextStyle(
+                                    color: colors.textSecondary, fontSize: 14),
                               ),
                             ],
                           ),
-                          _LogoutButton(onTap: () => _logout(context)),
+                          Row(
+                            children: [
+                              const _ThemeToggleButton(),
+                              const SizedBox(width: 10),
+                              _IconAction(
+                                  icon: Icons.logout_rounded,
+                                  onTap: () => _logout(context)),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -58,7 +71,10 @@ class HomeScreen extends StatelessWidget {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                      child: _ProfileCard(name: user.name, email: user.email, verified: user.emailVerified),
+                      child: _ProfileCard(
+                          name: user.name,
+                          email: user.email,
+                          verified: user.emailVerified),
                     ),
                   ),
                   SliverFillRemaining(
@@ -80,18 +96,21 @@ class _ProfileCard extends StatelessWidget {
   final String email;
   final bool verified;
 
-  const _ProfileCard({required this.name, required this.email, required this.verified});
+  const _ProfileCard(
+      {required this.name, required this.email, required this.verified});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppGradients.primary,
+        gradient: colors.primaryGradient,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryEnd.withOpacity(0.28),
+            color: colors.primaryEnd.withOpacity(0.28),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -105,12 +124,16 @@ class _ProfileCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.18),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
             ),
             alignment: Alignment.center,
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 16),
@@ -120,12 +143,16 @@ class _ProfileCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   email,
-                  style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.85), fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -140,7 +167,10 @@ class _ProfileCard extends StatelessWidget {
               ),
               child: const Text(
                 'Unverified',
-                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -152,6 +182,8 @@ class _ProfileCard extends StatelessWidget {
 class _EmptyConversations extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -160,18 +192,20 @@ class _EmptyConversations extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: colors.surface,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: colors.border),
             ),
-            child: const Icon(Icons.forum_outlined, color: AppColors.primaryStart, size: 30),
+            child: Icon(Icons.forum_outlined,
+                color: colors.primaryStart, size: 30),
           ),
           const SizedBox(height: 16),
-          Text('No conversations yet', style: Theme.of(context).textTheme.titleLarge),
+          Text('No conversations yet',
+              style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
             'Start a chat and it will show up here.',
-            style: TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: colors.textSecondary),
           ),
         ],
       ),
@@ -179,26 +213,45 @@ class _EmptyConversations extends StatelessWidget {
   }
 }
 
-class _LogoutButton extends StatelessWidget {
+class _IconAction extends StatelessWidget {
+  final IconData icon;
   final VoidCallback onTap;
-  const _LogoutButton({required this.onTap});
+  const _IconAction({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Material(
-      color: AppColors.surface,
+      color: colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: colors.border),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.all(10),
-          child: Icon(Icons.logout_rounded, size: 20, color: AppColors.textPrimary),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, size: 20, color: colors.textPrimary),
         ),
       ),
+    );
+  }
+}
+
+class _ThemeToggleButton extends StatelessWidget {
+  const _ThemeToggleButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
+    return _IconAction(
+      icon: themeProvider.isDark
+          ? Icons.light_mode_outlined
+          : Icons.dark_mode_outlined,
+      onTap: () => context.read<ThemeProvider>().toggleTheme(),
     );
   }
 }

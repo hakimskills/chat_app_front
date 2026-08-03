@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_background.dart';
@@ -66,13 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      SnackBar(content: Text(message), backgroundColor: context.colors.error),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final colors = context.colors;
 
     return Scaffold(
       body: AppBackground(
@@ -86,7 +88,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   const BrandMark(size: 56),
                   const SizedBox(height: 24),
-                  Text('Welcome back', style: Theme.of(context).textTheme.displaySmall),
+                  Text('Welcome back',
+                      style: Theme.of(context).textTheme.displaySmall),
                   const SizedBox(height: 6),
                   Text(
                     'Log in to pick up your conversations',
@@ -119,7 +122,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                            prefixIcon:
+                                const Icon(Icons.lock_outline, size: 20),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -127,8 +131,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : Icons.visibility_off_outlined,
                                 size: 20,
                               ),
-                              onPressed: () =>
-                                  setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword),
                             ),
                           ),
                           validator: (value) {
@@ -150,12 +154,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 22),
                   Row(
                     children: [
-                      Expanded(child: Divider(color: AppColors.border)),
+                      Expanded(child: Divider(color: colors.border)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or', style: TextStyle(color: AppColors.textSecondary)),
+                        child: Text('or',
+                            style: TextStyle(color: colors.textSecondary)),
                       ),
-                      Expanded(child: Divider(color: AppColors.border)),
+                      Expanded(child: Divider(color: colors.border)),
                     ],
                   ),
                   const SizedBox(height: 18),
@@ -167,18 +172,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterScreen()),
                         );
                       },
                       child: RichText(
                         text: TextSpan(
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                          children: const [
-                            TextSpan(text: "Don't have an account? "),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 14),
+                          children: [
+                            const TextSpan(text: "Don't have an account? "),
                             TextSpan(
                               text: 'Sign up',
                               style: TextStyle(
-                                color: AppColors.primaryStart,
+                                color: colors.primaryStart,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -198,21 +205,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Rounded white card the form sits on, floating above the orb backdrop.
+/// Rounded card the form sits on, floating above the orb backdrop.
 class _FormCard extends StatelessWidget {
   final Widget child;
   const _FormCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryEnd.withOpacity(0.06),
+            color: colors.primaryEnd.withOpacity(0.06),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -229,14 +238,17 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return SizedBox(
       height: 54,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.surface,
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: colors.surface,
+          side: BorderSide(color: colors.border),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -245,13 +257,21 @@ class _GoogleButton extends StatelessWidget {
               width: 20,
               height: 20,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF1F3F4)),
-              child: const Text('G', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              decoration:
+                  BoxDecoration(shape: BoxShape.circle, color: colors.bgTop),
+              child: Text(
+                'G',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary),
+              ),
             ),
             const SizedBox(width: 10),
-            const Text(
+            Text(
               'Continue with Google',
-              style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, color: colors.textPrimary),
             ),
           ],
         ),

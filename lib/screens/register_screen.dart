@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_background.dart';
@@ -50,7 +51,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } else if (authProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(authProvider.errorMessage!), backgroundColor: AppColors.error),
+        SnackBar(
+            content: Text(authProvider.errorMessage!),
+            backgroundColor: context.colors.error),
       );
     }
   }
@@ -58,6 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final colors = context.colors;
 
     return Scaffold(
       body: AppBackground(
@@ -83,7 +87,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: ListView(
                       children: [
                         const SizedBox(height: 8),
-                        Text('Create your account', style: Theme.of(context).textTheme.displaySmall),
+                        Text('Create your account',
+                            style: Theme.of(context).textTheme.displaySmall),
                         const SizedBox(height: 6),
                         Text(
                           'Join and start chatting in seconds',
@@ -93,11 +98,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: colors.surface,
                             borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryEnd.withOpacity(0.06),
+                                color: colors.primaryEnd.withOpacity(0.06),
                                 blurRadius: 24,
                                 offset: const Offset(0, 10),
                               ),
@@ -109,11 +114,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 controller: _nameController,
                                 decoration: const InputDecoration(
                                   labelText: 'Full name',
-                                  prefixIcon: Icon(Icons.person_outline, size: 20),
+                                  prefixIcon:
+                                      Icon(Icons.person_outline, size: 20),
                                 ),
-                                validator: (value) => (value == null || value.trim().isEmpty)
-                                    ? 'Name is required'
-                                    : null,
+                                validator: (value) =>
+                                    (value == null || value.trim().isEmpty)
+                                        ? 'Name is required'
+                                        : null,
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
@@ -121,13 +128,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 keyboardType: TextInputType.emailAddress,
                                 decoration: const InputDecoration(
                                   labelText: 'Email',
-                                  prefixIcon: Icon(Icons.mail_outline, size: 20),
+                                  prefixIcon:
+                                      Icon(Icons.mail_outline, size: 20),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Email is required';
                                   }
-                                  if (!value.contains('@')) return 'Enter a valid email';
+                                  if (!value.contains('@'))
+                                    return 'Enter a valid email';
                                   return null;
                                 },
                               ),
@@ -137,7 +146,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscureText: _obscurePassword,
                                 decoration: InputDecoration(
                                   labelText: 'Password',
-                                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline, size: 20),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword
@@ -145,8 +155,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           : Icons.visibility_off_outlined,
                                       size: 20,
                                     ),
-                                    onPressed: () =>
-                                        setState(() => _obscurePassword = !_obscurePassword),
+                                    onPressed: () => setState(() =>
+                                        _obscurePassword = !_obscurePassword),
                                   ),
                                 ),
                                 validator: (value) {
@@ -165,7 +175,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscureText: _obscurePassword,
                                 decoration: const InputDecoration(
                                   labelText: 'Confirm password',
-                                  prefixIcon: Icon(Icons.lock_outline, size: 20),
+                                  prefixIcon:
+                                      Icon(Icons.lock_outline, size: 20),
                                 ),
                                 validator: (value) {
                                   if (value != _passwordController.text) {
