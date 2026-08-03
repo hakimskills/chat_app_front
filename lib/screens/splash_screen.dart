@@ -54,6 +54,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Scaffold(
       body: AppBackground(
         child: Center(
@@ -66,22 +68,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 children: [
                   const BrandMark(size: 84),
                   const SizedBox(height: 20),
-                  Text(
-                    'chat_app',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                  Text('chat_app', style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 6),
                   Text(
                     'Conversations, simplified.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 36),
-                  const SizedBox(
+                  SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation(AppColors.primaryStart),
+                      valueColor: AlwaysStoppedAnimation(colors.primaryStart),
                     ),
                   ),
                 ],
