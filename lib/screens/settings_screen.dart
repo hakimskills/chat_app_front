@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
+import 'edit_profile_screen.dart';
 import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -14,7 +15,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // UI-only toggles — not wired to any backend/preferences yet.
   bool _pushNotifications = true;
   bool _messageSound = true;
   bool _readReceipts = true;
@@ -54,6 +54,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final colors = context.colors;
+    final passwordController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Delete account?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+                'This permanently deletes your account and cannot be undone.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                helperText: 'Leave blank if you signed up with Google',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('Delete', style: TextStyle(color: colors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final password = passwordController.text.trim();
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.deleteAccount(
+      password: password.isEmpty ? null : password,
+    );
+
+    if (!context.mounted) return;
+
+    if (success) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } else if (authProvider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(authProvider.errorMessage!),
+            backgroundColor: colors.error),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -70,7 +134,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
-          if (user != null) _ProfileHeader(name: user.name, email: user.email),
+          if (user != null)
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                );
+              },
+              child: _ProfileHeader(name: user.name, email: user.email),
+            ),
           const SizedBox(height: 28),
           const _SectionHeader('Appearance'),
           const SizedBox(height: 10),
@@ -134,6 +206,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Log out',
                 destructive: true,
                 onTap: () => _confirmLogout(context),
+              ),
+              _NavTile(
+                icon: Icons.delete_forever_outlined,
+                title: 'Delete account',
+                destructive: true,
+                onTap: () => _confirmDeleteAccount(context),
               ),
             ],
           ),
@@ -216,7 +294,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Rounded card wrapping a group of settings rows with dividers between them.
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
   const _SettingsGroup({required this.children});
@@ -329,8 +406,6 @@ class _NavTile extends StatelessWidget {
   }
 }
 
-/// The one functional control on this screen: switches ThemeMode and
-/// persists it via ThemeProvider.
 class _AppearanceSelector extends StatelessWidget {
   const _AppearanceSelector();
 
