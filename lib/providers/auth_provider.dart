@@ -21,8 +21,6 @@ class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
-  /// Call this once on app start (see SplashScreen) to check whether a
-  /// stored token is still valid, and restore the session if so.
   Future<void> checkAuthStatus() async {
     final token = await TokenStorage.instance.getToken();
 
@@ -36,7 +34,6 @@ class AuthProvider extends ChangeNotifier {
       user = await _authService.getCurrentUser();
       status = AuthStatus.authenticated;
     } catch (_) {
-      // Token exists but is no longer valid (expired/revoked elsewhere).
       await TokenStorage.instance.deleteToken();
       status = AuthStatus.unauthenticated;
     }
@@ -70,7 +67,6 @@ class AuthProvider extends ChangeNotifier {
     try {
       final googleAccount = await _googleSignIn.signIn();
       if (googleAccount == null) {
-        // User cancelled the Google sign-in sheet.
         isLoading = false;
         notifyListeners();
         return false;
@@ -90,10 +86,61 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('🔴 Google sign-in error: $e');
-      errorMessage =
-          e is ApiException ? e.message : 'Google sign-in failed: $e';
+      errorMessage = e is ApiException ? e.message : 'Google sign-in failed.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 
+  Future<bool> updateProfile({
+    String? name,
+    String? username,
+    String? phoneNumber,
+    String? bio,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final fields = <String, dynamic>{};
+      if (name != null) fields['name'] = name;
+      if (username != null) fields['username'] = username;
+      if (phoneNumber != null) fields['phone_number'] = phoneNumber;
+      if (bio != null) fields['bio'] = bio;
+
+      user = await _authService.updateProfile(fields);
+      isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = e is ApiException ? e.message : 'Something went wrong.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount({String? password}) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authService.deleteAccount(password: password);
+
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      user = null;
+      status = AuthStatus.unauthenticated;
+      isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = e is ApiException ? e.message : 'Something went wrong.';
       isLoading = false;
       notifyListeners();
       return false;
@@ -106,9 +153,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _authService.logout();
-    } catch (_) {
-      // Ignore — local state is cleared regardless (see AuthService.logout).
-    }
+    } catch (_) {}
 
     try {
       await _googleSignIn.signOut();
