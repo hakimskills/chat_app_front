@@ -70,6 +70,29 @@ class AuthService {
     throw ApiException.fromResponse(response);
   }
 
+  Future<UserModel> updateProfile(Map<String, dynamic> fields) async {
+    final response = await _safePut(ApiConstants.profile, fields);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserModel.fromJson(data['user']);
+    }
+    throw ApiException.fromResponse(response);
+  }
+
+  Future<void> deleteAccount({String? password}) async {
+    final response = await _safeDelete(
+      ApiConstants.profile,
+      password != null ? {'password': password} : {},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException.fromResponse(response);
+    }
+
+    await TokenStorage.instance.deleteToken();
+  }
+
   Future<void> logout() async {
     try {
       final response = await _safePost(ApiConstants.logout, {});
@@ -77,8 +100,6 @@ class AuthService {
         throw ApiException.fromResponse(response);
       }
     } finally {
-      // Always clear the local token, even if the server call failed —
-      // e.g. token was already invalid/revoked elsewhere.
       await TokenStorage.instance.deleteToken();
     }
   }
@@ -110,6 +131,31 @@ class AuthService {
   Future<http.Response> _safeGet(String path) async {
     try {
       return await _client.get(path);
+    } on SocketException {
+      throw ApiException.network();
+    } on TimeoutException {
+      throw ApiException.network();
+    } on http.ClientException {
+      throw ApiException.network();
+    }
+  }
+
+  Future<http.Response> _safePut(String path, Map<String, dynamic> body) async {
+    try {
+      return await _client.put(path, body);
+    } on SocketException {
+      throw ApiException.network();
+    } on TimeoutException {
+      throw ApiException.network();
+    } on http.ClientException {
+      throw ApiException.network();
+    }
+  }
+
+  Future<http.Response> _safeDelete(
+      String path, Map<String, dynamic> body) async {
+    try {
+      return await _client.delete(path, body);
     } on SocketException {
       throw ApiException.network();
     } on TimeoutException {
