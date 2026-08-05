@@ -1,14 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
 import 'token_storage.dart';
 
-/// Thin wrapper around the http package. Automatically attaches the
-/// bearer token (if present) to every request, and applies a timeout
-/// so a hung connection doesn't just spin forever.
 class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
@@ -25,7 +21,6 @@ class ApiClient {
   }
 
   Future<http.Response> post(String path, Map<String, dynamic> body) async {
-    debugPrint('➡️ POST ${ApiConstants.baseUrl}$path');
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     return http
         .post(uri, headers: await _headers(), body: jsonEncode(body))
@@ -35,5 +30,19 @@ class ApiClient {
   Future<http.Response> get(String path) async {
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     return http.get(uri, headers: await _headers()).timeout(_timeout);
+  }
+
+  Future<http.Response> put(String path, Map<String, dynamic> body) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}$path');
+    return http
+        .put(uri, headers: await _headers(), body: jsonEncode(body))
+        .timeout(_timeout);
+  }
+
+  Future<http.Response> delete(String path, Map<String, dynamic> body) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}$path');
+    return http
+        .delete(uri, headers: await _headers(), body: jsonEncode(body))
+        .timeout(_timeout);
   }
 }
