@@ -1,135 +1,194 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/conversation_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/chat_provider.dart';
 import '../theme/app_theme.dart';
+import 'chat_screen.dart';
 import 'settings_screen.dart';
 
-/// Placeholder chat preview model — purely for UI mockup until the real
-/// conversations API/model exists. Replace with the real Conversation
-/// model once the chat domain is built.
-class _ChatPreview {
-  final String name;
-  final String lastMessage;
-  final String time;
-  final int unreadCount;
-  final Color avatarColor;
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-  const _ChatPreview({
-    required this.name,
-    required this.lastMessage,
-    required this.time,
-    required this.unreadCount,
-    required this.avatarColor,
-  });
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-const _mockChats = [
-  _ChatPreview(
-    name: 'Sarah Chen',
-    lastMessage: 'Sounds good, see you then! 👍',
-    time: '09:41',
-    unreadCount: 2,
-    avatarColor: Color(0xFF6C5CE7),
-  ),
-  _ChatPreview(
-    name: 'Design Team',
-    lastMessage: "Yacine: I've pushed the new mockups",
-    time: '08:15',
-    unreadCount: 5,
-    avatarColor: Color(0xFFFF6B81),
-  ),
-  _ChatPreview(
-    name: 'Marc Dubois',
-    lastMessage: 'Typing…',
-    time: 'Yesterday',
-    unreadCount: 0,
-    avatarColor: Color(0xFF00B894),
-  ),
-  _ChatPreview(
-    name: 'Amel Boudiaf',
-    lastMessage: 'Thanks for the update 🙏',
-    time: 'Yesterday',
-    unreadCount: 0,
-    avatarColor: Color(0xFFFDA085),
-  ),
-  _ChatPreview(
-    name: 'Family 👨‍👩‍👧',
-    lastMessage: "Dad: Don't forget Sunday lunch",
-    time: 'Monday',
-    unreadCount: 0,
-    avatarColor: Color(0xFF4834D4),
-  ),
-];
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatProvider>().loadConversations();
+    });
+  }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  Future<void> _startNewChat(BuildContext context) async {
+    final colors = context.colors;
+    final controller = TextEditingController();
+
+    final userId = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Start a chat'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'User ID',
+            helperText: 'Temporary — replace with a proper user search later',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext)
+                .pop(int.tryParse(controller.text.trim())),
+            child: const Text('Start'),
+          ),
+        ],
+      ),
+    );
+
+    if (userId == null || !context.mounted) return;
+
+    final conversation =
+        await context.read<ChatProvider>().startPrivateChat(userId);
+
+    if (!context.mounted) return;
+
+    if (conversation != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversation.id,
+            title: conversation.displayName,
+          ),
+        ),
+      );
+    } else {
+      final error = context.read<ChatProvider>().conversationsError;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error ?? 'Could not start chat.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final chatProvider = context.watch<ChatProvider>();
     final colors = context.colors;
 
     return Scaffold(
       backgroundColor: colors.bgBottom,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _startNewChat(context),
+        backgroundColor: colors.primaryStart,
+        child:
+            const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
+      ),
       body: user == null
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hey, ${user.name.split(' ').first} 👋',
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '@${user.username}',
-                                style: TextStyle(
-                                    color: colors.textSecondary, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          _IconAction(
-                            icon: Icons.settings_outlined,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const SettingsScreen()),
-                              );
-                            },
-                          ),
-                        ],
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    context.read<ChatProvider>().loadConversations(),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Hey, ${user.name.split(' ').first} 👋',
+                                  style:
+                                      Theme.of(context).textTheme.headlineSmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '@${user.username}',
+                                  style: TextStyle(
+                                      color: colors.textSecondary,
+                                      fontSize: 14),
+                                ),
+                              ],
+                            ),
+                            _IconAction(
+                              icon: Icons.settings_outlined,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => const SettingsScreen()),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                      child: Text('Chats',
-                          style: Theme.of(context).textTheme.titleLarge),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                        child: Text('Chats',
+                            style: Theme.of(context).textTheme.titleLarge),
+                      ),
                     ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverList.separated(
-                      itemCount: _mockChats.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) =>
-                          _ChatTile(chat: _mockChats[index]),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+                    if (chatProvider.isLoadingConversations)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      )
+                    else if (chatProvider.conversationsError != null)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            chatProvider.conversationsError!,
+                            style: TextStyle(color: colors.error),
+                          ),
+                        ),
+                      )
+                    else if (chatProvider.conversations.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Center(
+                            child: Text(
+                              'No conversations yet.\nTap the button below to start one.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: colors.textSecondary),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        sliver: SliverList.separated(
+                          itemCount: chatProvider.conversations.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) => _ChatTile(
+                              conversation: chatProvider.conversations[index]),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 88)),
+                  ],
+                ),
               ),
             ),
     );
@@ -137,31 +196,47 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _ChatTile extends StatelessWidget {
-  final _ChatPreview chat;
-  const _ChatTile({required this.chat});
+  final ConversationModel conversation;
+  const _ChatTile({required this.conversation});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final hasUnread = chat.unreadCount > 0;
+    final hasUnread = conversation.unreadCount > 0;
+    final preview = conversation.lastMessage?.body ?? 'No messages yet';
+    final time = conversation.lastMessage != null
+        ? _formatTime(conversation.lastMessage!.createdAt)
+        : '';
+    final avatarColor = colors.primaryStart;
 
     return Material(
       color: colors.surface,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () {}, // placeholder — wire up once conversation screens exist
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                conversationId: conversation.id,
+                title: conversation.displayName,
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: chat.avatarColor.withOpacity(0.16),
+                backgroundColor: avatarColor.withOpacity(0.16),
                 child: Text(
-                  chat.name.characters.first.toUpperCase(),
+                  conversation.displayName.isNotEmpty
+                      ? conversation.displayName.characters.first.toUpperCase()
+                      : '?',
                   style: TextStyle(
-                      color: chat.avatarColor,
+                      color: avatarColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 16),
                 ),
@@ -175,7 +250,7 @@ class _ChatTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            chat.name,
+                            conversation.displayName,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
@@ -185,7 +260,7 @@ class _ChatTile extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          chat.time,
+                          time,
                           style: TextStyle(
                             fontSize: 12,
                             color: hasUnread
@@ -202,7 +277,7 @@ class _ChatTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            chat.lastMessage,
+                            preview,
                             style: TextStyle(
                               fontSize: 13.5,
                               color: hasUnread
@@ -224,7 +299,7 @@ class _ChatTile extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '${chat.unreadCount}',
+                              '${conversation.unreadCount}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -243,6 +318,18 @@ class _ChatTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatTime(DateTime dt) {
+    final now = DateTime.now();
+    final isToday =
+        dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    if (isToday) {
+      final hour = dt.hour.toString().padLeft(2, '0');
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+    return '${dt.day}/${dt.month}';
   }
 }
 
